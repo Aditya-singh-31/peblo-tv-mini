@@ -13,7 +13,11 @@ from app.validation.artwork import validate_artwork_bytes
 
 client = TestClient(app)
 
-ASSET_DIR = Path(__file__).resolve().parents[3] / "challenge" / "assets"
+_ASSET_CANDIDATES = (
+    Path(__file__).resolve().parents[3] / "challenge" / "assets",
+    Path(__file__).resolve().parents[2] / "challenge" / "assets",
+)
+ASSET_DIR = next((path for path in _ASSET_CANDIDATES if path.exists()), _ASSET_CANDIDATES[0])
 
 
 def _asset_bytes(name: str) -> bytes:

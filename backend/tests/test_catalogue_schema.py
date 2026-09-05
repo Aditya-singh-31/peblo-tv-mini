@@ -6,7 +6,11 @@ from pathlib import Path
 from app.schemas.catalogue import PublishedCatalogue
 
 
-CATALOGUE_PATH = Path(__file__).resolve().parents[3] / "challenge" / "example_catalogue.json"
+_CATALOGUE_CANDIDATES = (
+    Path(__file__).resolve().parents[3] / "challenge" / "example_catalogue.json",
+    Path(__file__).resolve().parents[2] / "challenge" / "example_catalogue.json",
+)
+CATALOGUE_PATH = next((path for path in _CATALOGUE_CANDIDATES if path.exists()), _CATALOGUE_CANDIDATES[0])
 
 
 def test_example_catalogue_matches_viewer_contract() -> None:
