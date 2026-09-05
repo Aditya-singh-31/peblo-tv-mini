@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-peblo}
+      POSTGRES_USER: ${POSTGRES_USER:-peblo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-peblo}:${POSTGRES_PASSWORD:-change_me_dev}@db:5432/${POSTGRES_DB:-peblo}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-dev}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_PATH: /storage
+      LOCAL_STORAGE_URL: ${LOCAL_STORAGE_URL:-http://localhost:8000/storage}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:5173,http://localhost:4173}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-true}
+      CORS_ALLOW_METHODS: ${CORS_ALLOW_METHODS:-*}
+      CORS_ALLOW_HEADERS: ${CORS_ALLOW_HEADERS:-*}
+      DEV_EDITOR_EMAIL: ${DEV_EDITOR_EMAIL:-editor@peblo.local}
+      DEV_EDITOR_PASSWORD: ${DEV_EDITOR_PASSWORD:-change_me_dev}
+      DEV_ADMIN_EMAIL: ${DEV_ADMIN_EMAIL:-admin@peblo.local}
+      DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD:-change_me_dev}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - app_storage:/storage
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  cms:
+    build:
+      context: ./cms
+      args:
+        VITE_API_URL: ${CMS_API_URL:-http://localhost:8000}
+    ports:
+      - "${CMS_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  viewer:
+    build:
+      context: ./viewer
+      args:
+        VITE_API_URL: ${VIEWER_API_URL:-http://localhost:8000}
+    ports:
+      - "${VIEWER_PORT:-4173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  app_storage:
