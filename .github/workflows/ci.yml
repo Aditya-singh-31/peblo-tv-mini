@@ -26,11 +26,11 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install backend dependencies
-        working-directory: peblo-tv-mini/backend
+        working-directory: ./backend
         run: uv pip install -r requirements.txt
 
       - name: Run backend tests
-        working-directory: peblo-tv-mini/backend
+        working-directory: ./backend
         run: uv run python -m pytest tests/ -v
 
   cms:
@@ -46,11 +46,11 @@ jobs:
           node-version: "20"
 
       - name: Install CMS dependencies
-        working-directory: peblo-tv-mini/cms
+        working-directory: ./cms
         run: npm ci
 
       - name: Build CMS
-        working-directory: peblo-tv-mini/cms
+        working-directory: ./cms
         run: npm run build
 
   viewer:
@@ -66,9 +66,9 @@ jobs:
           node-version: "20"
 
       - name: Install Viewer dependencies
-        working-directory: peblo-tv-mini/viewer
+        working-directory: ./viewer
         run: npm ci
 
       - name: Build Viewer
-        working-directory: peblo-tv-mini/viewer
+        working-directory: ./viewer
         run: npm run build
